@@ -399,9 +399,12 @@ public abstract class StatementInstrumentation extends JdbcInstrumentation {
             if (t == null && jdbcHelperManager != null) {
                 JdbcHelper jdbcHelper = jdbcHelperManager.getForClassLoaderOfClass(Statement.class);
                 if (jdbcHelper != null) {
-                    span.getContext()
-                        .getDb()
-                        .withAffectedRowsCount(jdbcHelper.getAndStoreUpdateCount(statement));
+                    int count = jdbcHelper.getAndStoreUpdateCount(statement);
+                    if (count != Integer.MIN_VALUE) {
+                        span.getContext()
+                            .getDb()
+                            .withAffectedRowsCount(count);
+                    }
                 }
             }
 
@@ -429,21 +432,29 @@ public abstract class StatementInstrumentation extends JdbcInstrumentation {
             );
         }
 
-        @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class)
-        private static void onExit(@Advice.This Statement statement,
-                                   @Advice.Thrown @Nullable Throwable thrown,
-                                   @Advice.Return(readOnly = false) int returnValue) {
+        @Advice.OnMethodEnter(suppress = Throwable.class, skipOn = Advice.OnNonDefaultValue.class)
+        private static boolean onEnter(@Advice.This Statement statement,
+                                       @Advice.Local("storedValue") int storedValue) {
 
             if (tracer == null || jdbcHelperManager == null) {
-                return;
+                return false;
             }
 
             JdbcHelper helperImpl = jdbcHelperManager.getForClassLoaderOfClass(Statement.class);
             if (helperImpl == null) {
-                return;
+                return false;
             }
 
-            int storedValue = helperImpl.getAndClearStoredUpdateCount(statement);
+            storedValue = helperImpl.getAndClearStoredUpdateCount(statement);
+            return storedValue != Integer.MIN_VALUE;
+
+        }
+
+        @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class)
+        private static void onExit(@Advice.This Statement statement,
+                                   @Advice.Thrown @Nullable Throwable thrown,
+                                   @Advice.Local("storedValue") int storedValue,
+                                   @Advice.Return(readOnly = false) int returnValue) {
 
             if (thrown == null && storedValue != Integer.MIN_VALUE) {
                 returnValue = storedValue;

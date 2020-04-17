@@ -114,7 +114,8 @@ public abstract class AbstractJdbcInstrumentationTest extends AbstractInstrument
     @Test
     public void test() throws SQLException {
         executeTest(this::testStatement);
-        executeTest(this::testUpdateStatement);
+        executeTest(() -> testUpdateStatement(true));
+        executeTest(() -> testUpdateStatement(false));
         executeTest(this::testStatementNotSupportingUpdateCount);
         executeTest(this::testStatementNotSupportingConnection);
         executeTest(this::testStatementWithoutConnectionMetadata);
@@ -188,13 +189,35 @@ public abstract class AbstractJdbcInstrumentationTest extends AbstractInstrument
         assertSpanRecorded(sql, false, -1);
     }
 
-    private void testUpdateStatement() throws SQLException {
+    private void testUpdateStatement(boolean idempotentUpdateCount) throws SQLException {
         final String sql = "UPDATE ELASTIC_APM SET BAR='AFTER' WHERE FOO=11";
-        Statement statement = connection.createStatement();
+        TestStatement statement = new TestStatement(connection.createStatement());
+        statement.setGetUpdateCountIdempotent(idempotentUpdateCount);
+
+        assertThat(statement.getGetUpdateCountCallsCount())
+            .describedAs("getUpdateCount should not have been called once")
+            .isZero();
+
         boolean isResultSet = statement.execute(sql);
+
+        assertThat(statement.getGetUpdateCountCallsCount())
+            .describedAs("getUpdateCount should have been called by 'execute' instrumentation twice")
+            .isEqualTo(2);
+
         assertThat(isResultSet).isFalse();
 
-        checkUpdateCount(statement, 1);
+        assertThat(statement.getUpdateCount())
+            .isEqualTo(1);
+
+        if(idempotentUpdateCount) {
+            assertThat(statement.getGetUpdateCountCallsCount())
+                .describedAs("calling instrumented getUpdateCount on idempotent update count should not increase call count")
+                .isEqualTo(3);
+        } else {
+            assertThat(statement.getGetUpdateCountCallsCount())
+                .describedAs("calling instrumented getUpdateCount on non-idempotent update count should not increase call count")
+                .isEqualTo(2);
+        }
 
         assertSpanRecorded(sql, false, 1);
     }

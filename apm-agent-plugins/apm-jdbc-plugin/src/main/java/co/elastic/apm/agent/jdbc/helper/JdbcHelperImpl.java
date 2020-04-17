@@ -30,6 +30,7 @@ import co.elastic.apm.agent.impl.transaction.AbstractSpan;
 import co.elastic.apm.agent.impl.transaction.Span;
 import co.elastic.apm.agent.impl.transaction.TraceContextHolder;
 import co.elastic.apm.agent.jdbc.signature.SignatureParser;
+import co.elastic.apm.agent.util.CallDepth;
 import co.elastic.apm.agent.util.DataStructures;
 import com.blogspot.mydailyjava.weaklockfree.WeakConcurrentMap;
 import org.slf4j.Logger;
@@ -77,6 +78,7 @@ public class JdbcHelperImpl extends JdbcHelper {
         metadataSupported.clear();
         connectionSupported.clear();
         statementsUpdateCount.clear();
+        idempotentGetUpdateCount.clear();
     }
 
     @Override
@@ -192,50 +194,69 @@ public class JdbcHelperImpl extends JdbcHelper {
 
     @Override
     public int getAndStoreUpdateCount(Object statement) {
-        int result = Integer.MIN_VALUE;
-        if (!(statement instanceof Statement)) {
-            return result;
-        }
-
-        Class<?> type = statement.getClass();
-        Boolean supported = isSupported(updateCountSupported, type);
-        if (supported == Boolean.FALSE) {
-            return result;
-        }
-
         try {
-            result = ((Statement) statement).getUpdateCount();
-            if (supported == null) {
-                markSupported(updateCountSupported, type);
+            CallDepth.increment(JdbcHelperImpl.class);
+
+            int result = Integer.MIN_VALUE;
+            if (!(statement instanceof Statement)) {
+                return result;
             }
 
-            // in order to minimize allocation, we keep track of implementation classes that are not idempotent,
-            // that allows avoiding extra work for the most common idempotent case.
-            Boolean isIdempotent = isSupported(idempotentGetUpdateCount, type);
-            if (isIdempotent == null) {
-                int secondResult = ((Statement) statement).getUpdateCount();
-                isIdempotent = (secondResult == result) ? Boolean.TRUE : Boolean.FALSE;
-                idempotentGetUpdateCount.put(type, isIdempotent);
+            Class<?> type = statement.getClass();
+            Boolean supported = isSupported(updateCountSupported, type);
+            if (supported == Boolean.FALSE) {
+                return result;
             }
 
-            if (isIdempotent != Boolean.TRUE) {
-                // save the value to be restored for the next call to getUpdateCount()
-                statementsUpdateCount.put(statement, result);
-            }
+            try {
+                result = ((Statement) statement).getUpdateCount();
+                if (supported == null) {
+                    markSupported(updateCountSupported, type);
+                }
 
-        } catch (SQLException e) {
-            markNotSupported(updateCountSupported, type, e);
+                // in order to minimize allocation, we keep track of implementation classes that are not idempotent,
+                // that allows avoiding extra work for the most common idempotent case.
+                Boolean isIdempotent = isSupported(idempotentGetUpdateCount, type);
+                if (isIdempotent == null) {
+                    int secondResult = ((Statement) statement).getUpdateCount();
+                    isIdempotent = (secondResult == result) ? Boolean.TRUE : Boolean.FALSE;
+                    idempotentGetUpdateCount.put(type, isIdempotent);
+                }
+
+                if (isIdempotent == Boolean.FALSE) {
+                    // save the value to be restored for the next call to getUpdateCount()
+                    statementsUpdateCount.put(statement, result);
+                }
+
+            } catch (SQLException e) {
+                markNotSupported(updateCountSupported, type, e);
+            }
+            return result;
+        } finally {
+            CallDepth.decrement(JdbcHelperImpl.class);
         }
-        return result;
     }
 
     @Override
     public int getAndClearStoredUpdateCount(Object statement) {
-        Integer value = null;
-        if (Boolean.FALSE == idempotentGetUpdateCount.get(statement.getClass())) {
-            value = statementsUpdateCount.remove(statement);
+        try {
+            int depth = CallDepth.increment(JdbcHelperImpl.class);
+
+            if (depth >= 1) {
+                // called from helper class through Statement.getUpdateCount instrumentation
+                // there is no lookup required as we haven't stored anything yet
+                return Integer.MIN_VALUE;
+            }
+
+            Integer value = null;
+            if (Boolean.FALSE == idempotentGetUpdateCount.get(statement.getClass())) {
+                value = statementsUpdateCount.remove(statement);
+            }
+            return value != null ? value : Integer.MIN_VALUE;
+
+        } finally {
+            CallDepth.decrement(JdbcHelperImpl.class);
         }
-        return value != null ? value : Integer.MIN_VALUE;
     }
 
     @Nullable

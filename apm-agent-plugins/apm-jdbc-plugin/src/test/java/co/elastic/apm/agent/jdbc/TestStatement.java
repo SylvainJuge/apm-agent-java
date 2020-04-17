@@ -37,6 +37,9 @@ class TestStatement implements Statement {
     private boolean isGetUpdateCountSupported;
     private int unsupportedThrownCount;
 
+    private int getUpdateCountCallsCount;
+    private boolean isGetUpdateCountIdempotent;
+
     private Connection connection;
 
     public TestStatement(Statement delegate) {
@@ -44,6 +47,8 @@ class TestStatement implements Statement {
         this.unsupportedThrownCount = 0;
         this.isGetConnectionSupported = true;
         this.isGetUpdateCountSupported = true;
+        this.getUpdateCountCallsCount = 0;
+        this.isGetUpdateCountIdempotent = true;
     }
 
     private void unsupportedCheck(boolean isFeatureSupported) throws SQLException {
@@ -63,6 +68,14 @@ class TestStatement implements Statement {
 
     int getUnsupportedThrownCount(){
         return unsupportedThrownCount;
+    }
+
+    public int getGetUpdateCountCallsCount() {
+        return getUpdateCountCallsCount;
+    }
+
+    public void setGetUpdateCountIdempotent(boolean idempotent) {
+        this.isGetUpdateCountIdempotent = idempotent;
     }
 
     void setConnection(Connection connection) {
@@ -135,8 +148,19 @@ class TestStatement implements Statement {
     }
 
     public int getUpdateCount() throws SQLException {
-        unsupportedCheck(isGetUpdateCountSupported);
-        return delegate.getUpdateCount();
+        try {
+            unsupportedCheck(isGetUpdateCountSupported);
+
+            // simulate non-idempotent update count by no delegating
+            // after the first call
+            if (isGetUpdateCountIdempotent || getUpdateCountCallsCount == 0) {
+                return delegate.getUpdateCount();
+            } else {
+                return -1;
+            }
+        } finally {
+            getUpdateCountCallsCount++;
+        }
     }
 
     public boolean getMoreResults() throws SQLException {
