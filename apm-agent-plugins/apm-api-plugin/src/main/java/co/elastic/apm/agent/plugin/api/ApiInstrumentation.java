@@ -32,6 +32,7 @@ import java.util.Collections;
 import static co.elastic.apm.agent.plugin.api.ElasticApmApiInstrumentation.PUBLIC_API_INSTRUMENTATION_GROUP;
 
 public abstract class ApiInstrumentation extends TracerAwareInstrumentation {
+
     @Override
     public boolean includeWhenInstrumentationIsDisabled() {
         return true;
@@ -42,8 +43,4 @@ public abstract class ApiInstrumentation extends TracerAwareInstrumentation {
         return Collections.singleton(PUBLIC_API_INSTRUMENTATION_GROUP);
     }
 
-    @Override
-    public boolean indyPlugin() {
-        return false;
-    }
 }

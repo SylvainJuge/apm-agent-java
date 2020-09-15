@@ -45,13 +45,13 @@ import static org.assertj.core.api.Java6Assertions.assertThat;
 public abstract class AbstractMongoClientInstrumentationTest extends AbstractInstrumentationTest {
 
     @SuppressWarnings("NullableProblems")
-    protected static GenericContainer container;
+    protected static GenericContainer<?> container;
     protected static final String DB_NAME = "testdb";
     protected static final String COLLECTION_NAME = "testcollection";
 
     @BeforeClass
     public static void startContainer() {
-        container = new GenericContainer("mongo:3.4").withExposedPorts(27017);
+        container = new GenericContainer<>("mongo:3.4").withExposedPorts(27017);
         container.start();
     }
 

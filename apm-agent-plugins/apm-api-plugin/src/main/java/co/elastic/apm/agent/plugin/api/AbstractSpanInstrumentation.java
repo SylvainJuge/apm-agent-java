@@ -69,8 +69,7 @@ public class AbstractSpanInstrumentation extends ApiInstrumentation {
             super(named("doSetName"));
         }
 
-        @VisibleForAdvice
-        @Advice.OnMethodEnter(suppress = Throwable.class)
+        @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
         public static void setName(@Advice.FieldValue(value = "span", typing = Assigner.Typing.DYNAMIC) AbstractSpan<?> context,
                                    @Advice.Argument(0) String name) {
             context.withName(name, PRIO_USER_SUPPLIED);
@@ -82,8 +81,7 @@ public class AbstractSpanInstrumentation extends ApiInstrumentation {
             super(named("doSetType"));
         }
 
-        @VisibleForAdvice
-        @Advice.OnMethodEnter(suppress = Throwable.class)
+        @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
         public static void setType(@Advice.FieldValue(value = "span", typing = Assigner.Typing.DYNAMIC) AbstractSpan<?> context,
                                    @Advice.Argument(0) String type) {
             if (context instanceof Transaction) {
@@ -99,8 +97,7 @@ public class AbstractSpanInstrumentation extends ApiInstrumentation {
             super(named("doSetTypes"));
         }
 
-        @VisibleForAdvice
-        @Advice.OnMethodEnter(suppress = Throwable.class)
+        @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
         public static void setType(@Advice.Argument(0) Object span,
                                    @Advice.Argument(1) @Nullable String type,
                                    @Advice.Argument(2) @Nullable String subtype,
@@ -112,13 +109,13 @@ public class AbstractSpanInstrumentation extends ApiInstrumentation {
     }
 
     public static class DoCreateSpanInstrumentation extends AbstractSpanInstrumentation {
+
         public DoCreateSpanInstrumentation() {
             super(named("doCreateSpan"));
         }
 
-        @VisibleForAdvice
         @AssignTo.Return
-        @Advice.OnMethodExit(suppress = Throwable.class)
+        @Advice.OnMethodExit(suppress = Throwable.class, inline = false)
         public static Span doCreateSpan(@Advice.FieldValue(value = "span", typing = Assigner.Typing.DYNAMIC) AbstractSpan<?> context) {
             return context.createSpan();
         }
@@ -129,8 +126,7 @@ public class AbstractSpanInstrumentation extends ApiInstrumentation {
             super(named("doSetStartTimestamp").and(takesArguments(long.class)));
         }
 
-        @VisibleForAdvice
-        @Advice.OnMethodEnter(suppress = Throwable.class)
+        @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
         public static void setStartTimestamp(@Advice.FieldValue(value = "span", typing = Assigner.Typing.DYNAMIC) AbstractSpan<?> context,
                                              @Advice.Argument(value = 0) long epochMicros) {
             context.setStartTimestamp(epochMicros);

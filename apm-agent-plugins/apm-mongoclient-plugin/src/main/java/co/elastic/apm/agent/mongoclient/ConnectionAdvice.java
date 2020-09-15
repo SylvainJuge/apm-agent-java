@@ -24,7 +24,6 @@
  */
 package co.elastic.apm.agent.mongoclient;
 
-import co.elastic.apm.agent.bci.VisibleForAdvice;
 import co.elastic.apm.agent.impl.GlobalTracer;
 import co.elastic.apm.agent.impl.transaction.AbstractSpan;
 import co.elastic.apm.agent.impl.transaction.Span;
@@ -41,14 +40,13 @@ import javax.annotation.Nullable;
 
 public class ConnectionAdvice {
 
-    @VisibleForAdvice
-    public static final Logger logger = LoggerFactory.getLogger(ConnectionAdvice.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConnectionAdvice.class);
 
     @Nullable
-    @Advice.OnMethodEnter(suppress = Throwable.class)
-    public static Span onEnter(@Advice.This Connection thiz,
-                               @Advice.Argument(0) Object databaseOrMongoNamespace,
-                               @Advice.Argument(1) BsonDocument command) {
+    @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
+    public static Object onEnter(@Advice.This Connection thiz,
+                                 @Advice.Argument(0) Object databaseOrMongoNamespace,
+                                 @Advice.Argument(1) BsonDocument command) {
         Span span = null;
         final AbstractSpan<?> activeSpan = GlobalTracer.get().getActive();
         if (activeSpan != null && !activeSpan.isExit()) {
@@ -113,9 +111,14 @@ public class ConnectionAdvice {
         return span;
     }
 
-    @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class)
-    public static void onExit(@Nullable @Advice.Enter Span span, @Advice.Thrown Throwable thrown, @Advice.Origin("#m") String methodName) {
-        if (span != null) {
+    @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class, inline = false)
+    public static void onExit(@Advice.Enter @Nullable Object enterSpan,
+                              @Advice.Thrown @Nullable Throwable thrown,
+                              @Advice.Origin("#m") String methodName) {
+
+        if (enterSpan instanceof Span) {
+            Span span = ((Span) enterSpan);
+
             span.deactivate().captureException(thrown);
             if (!methodName.endsWith("Async")) {
                 span.end();
