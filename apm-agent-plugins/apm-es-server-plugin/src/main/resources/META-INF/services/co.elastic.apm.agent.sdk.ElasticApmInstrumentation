@@ -1,0 +1,14 @@
+
+co.elastic.apm.agent.elasticsearch.http.HttpServerTransportInstrumentation$IncomingRequestInstrumentation
+
+co.elastic.apm.agent.elasticsearch.http.request.HttpRequestInstrumentation$ReleaseAndCopy
+co.elastic.apm.agent.elasticsearch.http.request.HttpRequestInstrumentation$Release
+co.elastic.apm.agent.elasticsearch.http.request.HttpRequestInstrumentation$CreateResponse
+
+# HTTP -> REST
+co.elastic.apm.agent.elasticsearch.rest.DefaultRestChannelInstrumentation$ConstructorInstrumentation
+co.elastic.apm.agent.elasticsearch.rest.DefaultRestChannelInstrumentation$SendResponseInstrumentation
+
+# HTTP send response
+co.elastic.apm.agent.elasticsearch.http.HttpChannelInstrumentation$SendResponse
+co.elastic.apm.agent.elasticsearch.http.HttpChannelInstrumentation$Close
