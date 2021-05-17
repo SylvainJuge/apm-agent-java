@@ -25,6 +25,7 @@
 
 package co.elastic.apm.agent.elasticsearch;
 
+import co.elastic.apm.agent.impl.transaction.AbstractSpan;
 import co.elastic.apm.agent.impl.transaction.Transaction;
 import co.elastic.apm.agent.sdk.state.GlobalState;
 import co.elastic.apm.agent.sdk.weakmap.WeakMapSupplier;
@@ -34,6 +35,7 @@ import org.elasticsearch.http.HttpChannel;
 import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestChannel;
+import org.elasticsearch.tasks.Task;
 
 /**
  * Provides storage for ES instrumentation global state
@@ -56,6 +58,7 @@ public class ElasticsearchGlobalState {
     public final WeakConcurrentMap<HttpResponse, Transaction> httpResponse2Transaction;
     public final WeakConcurrentMap<RestChannel, Transaction> restChannel2Transaction;
     public final WeakConcurrentMap<ActionListener<?>, Transaction> actionListener2Transaction;
+    public final WeakConcurrentMap<Task, AbstractSpan<?>> activeTasks;
 
     // package-private for testing
     ElasticsearchGlobalState() {
@@ -64,6 +67,7 @@ public class ElasticsearchGlobalState {
         httpRequest2Transaction = WeakMapSupplier.createMap();
         actionListener2Transaction = WeakMapSupplier.createMap();
         httpResponse2Transaction = WeakMapSupplier.createMap();
+        activeTasks = WeakMapSupplier.createMap();
     }
 
 

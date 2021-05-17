@@ -23,34 +23,22 @@
  * #L%
  */
 
-package co.elastic.apm.agent.elasticsearch.http;
+package co.elastic.apm.agent.elasticsearch.tasks;
 
 import co.elastic.apm.agent.elasticsearch.ElasticsearchHelper;
-import co.elastic.apm.agent.impl.transaction.AbstractSpan;
 import net.bytebuddy.asm.Advice;
-import org.elasticsearch.http.HttpResponse;
+import org.elasticsearch.tasks.Task;
 
 import javax.annotation.Nullable;
 
-public class WriteResponseAdvice {
+public class TaskUnregisterAdvice {
 
     private static final ElasticsearchHelper helper = ElasticsearchHelper.getInstance();
 
-    @Nullable
-    @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
-    public static Object onEnter(@Advice.Argument(1) Object msg) {
-        if(!(msg instanceof HttpResponse)){
-            return null;
-        }
-
-        return helper.startWriteResponse(msg);
-    }
-
     @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class, inline = false)
-    public static void onExit(@Advice.Enter @Nullable Object objSpan,
-                              @Advice.Argument(1) Object msg,
+    public static void onExit(@Advice.Return @Nullable Task task,
                               @Advice.Thrown @Nullable Throwable thrown) {
 
-        helper.endWriteResponse((HttpResponse) msg, (AbstractSpan<?>) objSpan, thrown);
+        helper.endTask(task);
     }
 }

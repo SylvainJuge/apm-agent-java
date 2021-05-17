@@ -26,6 +26,7 @@ package co.elastic.apm.agent.elasticsearch;
 
 import co.elastic.apm.agent.elasticsearch.action.ActionListenerInstrumentation;
 import co.elastic.apm.agent.impl.GlobalTracer;
+import co.elastic.apm.agent.impl.Tracer;
 import co.elastic.apm.agent.impl.transaction.AbstractSpan;
 import co.elastic.apm.agent.impl.transaction.Span;
 import co.elastic.apm.agent.impl.transaction.Transaction;
@@ -36,10 +37,13 @@ import org.elasticsearch.http.HttpPipelinedResponse;
 import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestChannel;
+import org.elasticsearch.tasks.Task;
 
 import javax.annotation.Nullable;
 
 public class ElasticsearchHelper {
+
+    private static final Tracer tracer = GlobalTracer.get();
 
     private static final ElasticsearchHelper INSTANCE = new ElasticsearchHelper(ElasticsearchGlobalState.getInstance());
 
@@ -202,6 +206,48 @@ public class ElasticsearchHelper {
             return ((HttpPipelinedResponse) httpResponse).getDelegateRequest();
         }
         return (HttpResponse) httpResponse;
+    }
+
+    @Nullable
+    public AbstractSpan<?> createTaskSpanOrTransaction(@Nullable Task task){
+        if (task == null) {
+            return null;
+        }
+        AbstractSpan<?> created = null;
+
+        AbstractSpan<?> parentActive = tracer.getActive();
+        if (parentActive == null) {
+            Transaction transaction = tracer.startRootTransaction(Task.class.getClassLoader());
+            if (transaction != null) {
+                created = transaction.withType("task")
+                    .appendToName("Task ")
+                    .appendToName(task.getType())
+                    .appendToName(" ")
+                    .appendToName(task.getAction());
+            }
+        } else {
+            created = parentActive.createSpan()
+                .withType("task")
+                .withName(String.format("Task %s %s", task.getType(), task.getAction()))
+                .withSubtype(task.getType());
+        }
+
+        globalState.activeTasks.put(task, created);
+
+        return created;
+    }
+
+    public void endTask(@Nullable Task task) {
+        if (task == null) {
+            return;
+        }
+
+        AbstractSpan<?> abstractSpan = globalState.activeTasks.remove(task);
+        if (abstractSpan == null) {
+            return;
+        }
+
+        abstractSpan.end();
     }
 
 }

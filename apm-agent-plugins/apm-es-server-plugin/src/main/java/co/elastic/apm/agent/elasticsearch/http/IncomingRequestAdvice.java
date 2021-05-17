@@ -49,6 +49,7 @@ public class IncomingRequestAdvice {
         if (transaction == null) {
             return null;
         }
+        transaction.withType("request");
 
         helper.httpRequestStart(request, transaction.activate(), channel);
 

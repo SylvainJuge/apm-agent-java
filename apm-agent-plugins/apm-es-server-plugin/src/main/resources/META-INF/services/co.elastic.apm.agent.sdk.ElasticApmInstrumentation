@@ -16,3 +16,7 @@ co.elastic.apm.agent.elasticsearch.rest.BaseRestHandlerInstrumentation
 # HTTP send response
 co.elastic.apm.agent.elasticsearch.http.HttpChannelInstrumentation$SendResponse
 co.elastic.apm.agent.elasticsearch.http.HttpChannelInstrumentation$Close
+
+# Task manager
+co.elastic.apm.agent.elasticsearch.tasks.TaskManagerInstrumentation$Register
+co.elastic.apm.agent.elasticsearch.tasks.TaskManagerInstrumentation$Unregister
