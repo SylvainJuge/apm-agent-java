@@ -56,14 +56,4 @@ public class IncomingRequestAdvice {
         return transaction;
     }
 
-    @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class, inline = false)
-    public static void onExit(@Advice.Enter @Nullable Object enterTransaction,
-                              @Advice.Thrown @Nullable Throwable thrown) {
-
-        if (!(enterTransaction instanceof Transaction)) {
-            return;
-        }
-//        Transaction transaction = (Transaction) enterTransaction;
-//        transaction.end();
-    }
 }

@@ -26,8 +26,6 @@
 package co.elastic.apm.agent.elasticsearch.tasks;
 
 import co.elastic.apm.agent.elasticsearch.ElasticsearchHelper;
-import co.elastic.apm.agent.impl.GlobalTracer;
-import co.elastic.apm.agent.impl.Tracer;
 import net.bytebuddy.asm.Advice;
 import org.elasticsearch.tasks.Task;
 
