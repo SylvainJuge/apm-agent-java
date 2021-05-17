@@ -31,10 +31,12 @@ import org.elasticsearch.action.ActionListener;
 
 import javax.annotation.Nullable;
 
+@Deprecated
 public class OnResponseAdvice {
 
     private static final ElasticsearchHelper helper = ElasticsearchHelper.getInstance();
 
+    @Nullable
     @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
     public static Object onEnter(@Advice.This ActionListener<?> listener) {
         return helper.listenerEnter(listener);

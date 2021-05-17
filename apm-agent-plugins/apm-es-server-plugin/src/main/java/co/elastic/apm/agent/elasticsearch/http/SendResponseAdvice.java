@@ -46,7 +46,7 @@ public class SendResponseAdvice {
             return;
         }
 
-        helper.registerListener(listener, transaction);
+//        helper.registerListener(listener, transaction);
 
         // make sure that transaction is active during HttpChannel#sendResponse method execution
         // so that HttpRequest#createResponse can lookup the active transaction

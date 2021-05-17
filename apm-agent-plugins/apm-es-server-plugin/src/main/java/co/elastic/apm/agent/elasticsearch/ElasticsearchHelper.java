@@ -25,12 +25,16 @@
 package co.elastic.apm.agent.elasticsearch;
 
 import co.elastic.apm.agent.elasticsearch.action.ActionListenerInstrumentation;
+import co.elastic.apm.agent.impl.GlobalTracer;
 import co.elastic.apm.agent.impl.transaction.AbstractSpan;
+import co.elastic.apm.agent.impl.transaction.Span;
 import co.elastic.apm.agent.impl.transaction.Transaction;
 import co.elastic.apm.agent.sdk.DynamicTransformer;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.http.HttpChannel;
+import org.elasticsearch.http.HttpPipelinedResponse;
 import org.elasticsearch.http.HttpRequest;
+import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestChannel;
 
 import javax.annotation.Nullable;
@@ -81,6 +85,12 @@ public class ElasticsearchHelper {
         return globalState.httpChannel2Transaction.get(httpChannel);
     }
 
+    @Nullable
+    public Transaction getTransaction(RestChannel restChannel) {
+        return globalState.restChannel2Transaction.get(restChannel);
+    }
+
+
     public void unregisterChannel(HttpChannel httpChannel) {
         globalState.httpChannel2Transaction.remove(httpChannel);
     }
@@ -90,12 +100,14 @@ public class ElasticsearchHelper {
         return globalState.httpRequest2Transaction.get(httpRequest);
     }
 
+    @Deprecated
     public void registerListener(ActionListener<?> listener, Transaction transaction) {
         DynamicTransformer.Accessor.get().ensureInstrumented(listener.getClass(), ActionListenerInstrumentation.ALL);
 
         globalState.actionListener2Transaction.put(listener, transaction);
     }
 
+    @Deprecated
     @Nullable
     public Transaction listenerEnter(ActionListener<?> listener) {
         Transaction transaction = globalState.actionListener2Transaction.get(listener); // todo abstract span this !
@@ -107,6 +119,7 @@ public class ElasticsearchHelper {
         return transaction;
     }
 
+    @Deprecated
     public void listenerExit(ActionListener<?> listener,
                              @Nullable Object objSpan,
                              @Nullable Exception argException,
@@ -114,15 +127,81 @@ public class ElasticsearchHelper {
         if (!(objSpan instanceof AbstractSpan)) {
             return;
         }
-        AbstractSpan<?> span = (AbstractSpan<?>)objSpan;
+        AbstractSpan<?> span = (AbstractSpan<?>) objSpan;
 
         globalState.actionListener2Transaction.remove(listener);
 
         span.captureException(argException)
             .captureException(thrownException)
+            .deactivate();
+    }
+
+
+    @Nullable
+    public Span spanStart() {
+        AbstractSpan<?> active = GlobalTracer.requireTracerImpl().getActive();
+        Span span = null;
+        if (active != null) {
+            span = active.createSpan().activate();
+        }
+        return span;
+    }
+
+    public void spanEnd(String name, @Nullable Object spanObj, @Nullable Throwable cause, @Nullable Throwable thrown) {
+        if (!(spanObj instanceof Span)) {
+            return;
+        }
+        ((Span) spanObj).captureException(thrown)
+            .captureException(cause)
             .deactivate()
+            .withName(name)
             .end();
     }
 
+    public void registerResponse(HttpResponse httpResponse, Transaction transaction) {
+        globalState.httpResponse2Transaction.put(httpResponse, transaction);
+    }
+
+    @Nullable
+    public Span startWriteResponse(Object response) {
+        if(!(response instanceof HttpResponse)){
+            return null;
+        }
+
+        Transaction transaction = globalState.httpResponse2Transaction.get(getPipelineResponse(response));
+        if (transaction == null) {
+            return null;
+        }
+
+        return transaction.createSpan()
+            .withName("response write")
+            .activate();
+    }
+
+    public void endWriteResponse(HttpResponse httpResponse, @Nullable AbstractSpan<?> enterSpan, @Nullable Throwable thrown) {
+        if (enterSpan != null) {
+            enterSpan.captureException(thrown)
+                .end();
+        }
+
+
+        Transaction transaction = globalState.httpResponse2Transaction.remove(getPipelineResponse(httpResponse));
+        if (transaction == null) {
+            return;
+        }
+
+        transaction.end();
+    }
+
+    private HttpResponse getPipelineResponse(Object httpResponse) {
+        if (!(httpResponse instanceof HttpResponse)) {
+            throw new IllegalArgumentException("unexpected http response" + httpResponse);
+        }
+
+        if (httpResponse instanceof HttpPipelinedResponse) {
+            return ((HttpPipelinedResponse) httpResponse).getDelegateRequest();
+        }
+        return (HttpResponse) httpResponse;
+    }
 
 }

@@ -22,32 +22,38 @@
  * under the License.
  * #L%
  */
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0 and the Server Side Public License, v 1; you may not use this file except
+ * in compliance with, at your election, the Elastic License 2.0 or the Server
+ * Side Public License, v 1.
+ */
 
-package co.elastic.apm.agent.elasticsearch.action;
+package co.elastic.apm.agent.elasticsearch.rest;
 
 import co.elastic.apm.agent.elasticsearch.ElasticsearchHelper;
 import net.bytebuddy.asm.Advice;
-import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.rest.BaseRestHandler;
+import org.elasticsearch.rest.RestChannel;
 
 import javax.annotation.Nullable;
 
-@Deprecated
-public class OnFailureAdvice {
+public class HandleRequestAdvice {
 
-    private static final ElasticsearchHelper helper = ElasticsearchHelper.getInstance();
+    public static final ElasticsearchHelper helper = ElasticsearchHelper.getInstance();
 
     @Nullable
     @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
-    public static Object onEnter(@Advice.This ActionListener<?> listener) {
-        return helper.listenerEnter(listener);
+    public static Object onEnter(@Advice.Argument(1) RestChannel restChannel) {
+        return helper.spanStart();
     }
 
     @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class, inline = false)
-    public static void onExit(@Advice.Enter @Nullable Object enterTransaction,
-                              @Advice.This ActionListener<?> listener,
-                              @Advice.Argument(0) Exception e,
+    public static void onExit(@Advice.Enter @Nullable Object spanObj,
+                              @Advice.This BaseRestHandler restHandler,
                               @Advice.Thrown @Nullable Throwable thrown) {
 
-        helper.listenerExit(listener, enterTransaction, e, thrown);
+        helper.spanEnd(restHandler.getName(), spanObj, null, thrown);
     }
 }

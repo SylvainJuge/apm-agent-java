@@ -25,25 +25,33 @@
 
 package co.elastic.apm.agent.elasticsearch.http.request;
 
+import co.elastic.apm.agent.elasticsearch.ElasticsearchHelper;
 import co.elastic.apm.agent.impl.GlobalTracer;
 import co.elastic.apm.agent.impl.Tracer;
 import co.elastic.apm.agent.impl.transaction.Transaction;
 import net.bytebuddy.asm.Advice;
+import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestStatus;
+
+import javax.annotation.Nullable;
 
 public class CreateResponseAdvice {
 
     private static final Tracer tracer = GlobalTracer.requireTracerImpl();
+    private static final ElasticsearchHelper helper = ElasticsearchHelper.getInstance();
 
     @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class, inline = false)
-    public static void onExit(@Advice.Argument(0) RestStatus status) {
+    public static void onExit(@Advice.Argument(0) RestStatus status,
+                              @Advice.Return @Nullable HttpResponse httpResponse) {
 
         // we have to rely on the active transaction
         // as the request has already been released and thus can't be used for lookup
         Transaction transaction = tracer.currentTransaction();
-        if (transaction == null) {
+        if (transaction == null || httpResponse == null) {
             return;
         }
+
+        helper.registerResponse(httpResponse, transaction);
 
         transaction.getContext().getResponse().withStatusCode(status.getStatus());
 

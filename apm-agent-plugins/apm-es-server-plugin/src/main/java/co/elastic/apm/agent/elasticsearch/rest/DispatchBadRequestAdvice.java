@@ -2,7 +2,7 @@
  * #%L
  * Elastic APM Java agent
  * %%
- * Copyright (C) 2018 - 2021 Elastic and contributors
+ * Copyright (C) 2018 - 2020 Elastic and contributors
  * %%
  * Licensed to Elasticsearch B.V. under one or more contributor
  * license agreements. See the NOTICE file distributed with
@@ -22,32 +22,35 @@
  * under the License.
  * #L%
  */
-
-package co.elastic.apm.agent.elasticsearch.action;
+package co.elastic.apm.agent.elasticsearch.rest;
 
 import co.elastic.apm.agent.elasticsearch.ElasticsearchHelper;
 import net.bytebuddy.asm.Advice;
-import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.http.HttpServerTransport;
+import org.elasticsearch.rest.RestChannel;
 
 import javax.annotation.Nullable;
 
-@Deprecated
-public class OnFailureAdvice {
+/**
+ * Instruments {@link HttpServerTransport.Dispatcher#dispatchBadRequest(RestChannel, ThreadContext, Throwable)}
+ */
+public class DispatchBadRequestAdvice {
 
-    private static final ElasticsearchHelper helper = ElasticsearchHelper.getInstance();
+    public static final ElasticsearchHelper helper = ElasticsearchHelper.getInstance();
 
     @Nullable
     @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
-    public static Object onEnter(@Advice.This ActionListener<?> listener) {
-        return helper.listenerEnter(listener);
+    public static Object onEnter(@Advice.Argument(0) RestChannel channel) {
+        return helper.spanStart();
     }
 
     @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class, inline = false)
-    public static void onExit(@Advice.Enter @Nullable Object enterTransaction,
-                              @Advice.This ActionListener<?> listener,
-                              @Advice.Argument(0) Exception e,
+    public static void onExit(@Advice.Enter @Nullable Object transactionObj,
+                              @Advice.Argument(2) Throwable cause,
                               @Advice.Thrown @Nullable Throwable thrown) {
 
-        helper.listenerExit(listener, enterTransaction, e, thrown);
+        helper.spanEnd("dispatch", transactionObj, cause, thrown);
     }
+
 }

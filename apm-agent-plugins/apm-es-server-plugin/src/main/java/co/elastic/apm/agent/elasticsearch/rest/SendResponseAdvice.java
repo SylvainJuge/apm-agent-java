@@ -25,19 +25,36 @@
 
 package co.elastic.apm.agent.elasticsearch.rest;
 
+import co.elastic.apm.agent.elasticsearch.ElasticsearchHelper;
+import co.elastic.apm.agent.impl.transaction.Transaction;
 import net.bytebuddy.asm.Advice;
+import org.elasticsearch.http.DefaultRestChannel;
 
 import javax.annotation.Nullable;
 
 public class SendResponseAdvice {
 
+    private static final ElasticsearchHelper helper = ElasticsearchHelper.getInstance();
+
+    @Nullable
     @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
-    public static void onEnter() {
-        System.out.println("REST sendResponse");
+    public static Object onEnter(@Advice.This DefaultRestChannel channel) {
+        Transaction transaction = helper.getTransaction(channel);
+        if (transaction == null) {
+            return null;
+        }
+        return transaction.activate();
     }
 
     @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class, inline = false)
-    public static void onExit(@Advice.Thrown @Nullable Throwable thrown) {
-        System.out.println("REST sendResponse");
+    public static void onExit(@Advice.Enter @Nullable Object transactionObj,
+                              @Advice.This DefaultRestChannel channel,
+                              @Advice.Thrown @Nullable Throwable thrown) {
+
+        if (!(transactionObj instanceof Transaction)) {
+            return;
+        }
+        Transaction transaction = (Transaction) transactionObj;
+        transaction.deactivate();
     }
 }

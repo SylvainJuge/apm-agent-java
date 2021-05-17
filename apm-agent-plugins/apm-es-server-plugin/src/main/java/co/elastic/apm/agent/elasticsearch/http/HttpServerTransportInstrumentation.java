@@ -30,10 +30,15 @@ import co.elastic.apm.agent.elasticsearch.ElasticsearchInstrumentation;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
+import org.elasticsearch.http.HttpChannel;
+import org.elasticsearch.http.HttpRequest;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.takesArgument;
 
+/**
+ * Instruments {@link org.elasticsearch.http.AbstractHttpServerTransport#incomingRequest(HttpRequest, HttpChannel)}
+ */
 public abstract class HttpServerTransportInstrumentation extends ElasticsearchInstrumentation {
 
     @Override

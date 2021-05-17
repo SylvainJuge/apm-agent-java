@@ -32,6 +32,7 @@ import com.blogspot.mydailyjava.weaklockfree.WeakConcurrentMap;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.http.HttpChannel;
 import org.elasticsearch.http.HttpRequest;
+import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestChannel;
 
 /**
@@ -52,6 +53,7 @@ public class ElasticsearchGlobalState {
     // using types that refer to ES classes is fine here due to type erasure.
     public final WeakConcurrentMap<HttpChannel, Transaction> httpChannel2Transaction;
     public final WeakConcurrentMap<HttpRequest, Transaction> httpRequest2Transaction;
+    public final WeakConcurrentMap<HttpResponse, Transaction> httpResponse2Transaction;
     public final WeakConcurrentMap<RestChannel, Transaction> restChannel2Transaction;
     public final WeakConcurrentMap<ActionListener<?>, Transaction> actionListener2Transaction;
 
@@ -61,6 +63,7 @@ public class ElasticsearchGlobalState {
         restChannel2Transaction = WeakMapSupplier.createMap();
         httpRequest2Transaction = WeakMapSupplier.createMap();
         actionListener2Transaction = WeakMapSupplier.createMap();
+        httpResponse2Transaction = WeakMapSupplier.createMap();
     }
 
 

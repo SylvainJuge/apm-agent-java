@@ -1,13 +1,17 @@
 
 co.elastic.apm.agent.elasticsearch.http.HttpServerTransportInstrumentation$IncomingRequestInstrumentation
+co.elastic.apm.agent.elasticsearch.http.Netty4HttpPipeliningHandlerInstrumentation
 
 co.elastic.apm.agent.elasticsearch.http.request.HttpRequestInstrumentation$ReleaseAndCopy
 co.elastic.apm.agent.elasticsearch.http.request.HttpRequestInstrumentation$Release
 co.elastic.apm.agent.elasticsearch.http.request.HttpRequestInstrumentation$CreateResponse
 
-# HTTP -> REST
+# REST
 co.elastic.apm.agent.elasticsearch.rest.DefaultRestChannelInstrumentation$ConstructorInstrumentation
 co.elastic.apm.agent.elasticsearch.rest.DefaultRestChannelInstrumentation$SendResponseInstrumentation
+co.elastic.apm.agent.elasticsearch.rest.RestControllerInstrumentation$DispatchRequest
+co.elastic.apm.agent.elasticsearch.rest.RestControllerInstrumentation$DispatchBadRequest
+co.elastic.apm.agent.elasticsearch.rest.BaseRestHandlerInstrumentation
 
 # HTTP send response
 co.elastic.apm.agent.elasticsearch.http.HttpChannelInstrumentation$SendResponse

@@ -22,32 +22,42 @@
  * under the License.
  * #L%
  */
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0 and the Server Side Public License, v 1; you may not use this file except
+ * in compliance with, at your election, the Elastic License 2.0 or the Server
+ * Side Public License, v 1.
+ */
 
-package co.elastic.apm.agent.elasticsearch.action;
+package co.elastic.apm.agent.elasticsearch.http;
 
 import co.elastic.apm.agent.elasticsearch.ElasticsearchHelper;
+import co.elastic.apm.agent.impl.transaction.AbstractSpan;
 import net.bytebuddy.asm.Advice;
-import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.http.HttpResponse;
 
 import javax.annotation.Nullable;
 
-@Deprecated
-public class OnFailureAdvice {
+public class WriteResponseAdvice {
 
     private static final ElasticsearchHelper helper = ElasticsearchHelper.getInstance();
 
     @Nullable
     @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
-    public static Object onEnter(@Advice.This ActionListener<?> listener) {
-        return helper.listenerEnter(listener);
+    public static Object onEnter(@Advice.Argument(1) Object msg) {
+        if(!(msg instanceof HttpResponse)){
+            return null;
+        }
+
+        return helper.startWriteResponse(msg);
     }
 
     @Advice.OnMethodExit(suppress = Throwable.class, onThrowable = Throwable.class, inline = false)
-    public static void onExit(@Advice.Enter @Nullable Object enterTransaction,
-                              @Advice.This ActionListener<?> listener,
-                              @Advice.Argument(0) Exception e,
+    public static void onExit(@Advice.Enter @Nullable Object objSpan,
+                              @Advice.Argument(1) Object msg,
                               @Advice.Thrown @Nullable Throwable thrown) {
 
-        helper.listenerExit(listener, enterTransaction, e, thrown);
+        helper.endWriteResponse((HttpResponse) msg, (AbstractSpan<?>) objSpan, thrown);
     }
 }

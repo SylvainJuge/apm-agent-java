@@ -11,9 +11,9 @@
  * the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,55 +22,41 @@
  * under the License.
  * #L%
  */
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0 and the Server Side Public License, v 1; you may not use this file except
+ * in compliance with, at your election, the Elastic License 2.0 or the Server
+ * Side Public License, v 1.
+ */
 
-package co.elastic.apm.agent.elasticsearch.action;
+package co.elastic.apm.agent.elasticsearch.http;
 
 import co.elastic.apm.agent.elasticsearch.ElasticsearchInstrumentation;
-import co.elastic.apm.agent.sdk.ElasticApmInstrumentation;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
 
-import java.util.Arrays;
-import java.util.List;
-
-import static net.bytebuddy.matcher.ElementMatchers.any;
 import static net.bytebuddy.matcher.ElementMatchers.named;
+import static net.bytebuddy.matcher.ElementMatchers.takesArgument;
 
-@Deprecated
-public abstract class ActionListenerInstrumentation extends ElasticsearchInstrumentation {
-
-    public static List<Class<? extends ElasticApmInstrumentation>> ALL = Arrays.<Class<? extends ElasticApmInstrumentation>>asList(OnFailure.class, OnResponse.class);
+public class Netty4HttpPipeliningHandlerInstrumentation extends ElasticsearchInstrumentation {
 
     @Override
     public ElementMatcher<? super TypeDescription> getTypeMatcher() {
-        // applied at runtime
-        return any();
+        return named("org.elasticsearch.http.netty4.Netty4HttpPipeliningHandler");
     }
 
-    public static class OnFailure extends ActionListenerInstrumentation {
-        @Override
-        public ElementMatcher<? super MethodDescription> getMethodMatcher() {
-            return named("onFailure");
-        }
-
-        @Override
-        public String getAdviceClassName() {
-            return "co.elastic.apm.agent.elasticsearch.action.OnFailureAdvice";
-        }
+    @Override
+    public ElementMatcher<? super MethodDescription> getMethodMatcher() {
+        return named("write")
+            .and(takesArgument(0, named("io.netty.channel.ChannelHandlerContext")))
+            .and(takesArgument(1, Object.class))
+            .and(takesArgument(2, named("io.netty.channel.ChannelPromise")));
     }
 
-    public static class OnResponse extends ActionListenerInstrumentation {
-        @Override
-        public ElementMatcher<? super MethodDescription> getMethodMatcher() {
-            return named("onResponse");
-        }
-
-        @Override
-        public String getAdviceClassName() {
-            return "co.elastic.apm.agent.elasticsearch.action.OnResponseAdvice";
-        }
+    @Override
+    public String getAdviceClassName() {
+        return "co.elastic.apm.agent.elasticsearch.http.WriteResponseAdvice";
     }
-
-
 }

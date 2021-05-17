@@ -22,49 +22,31 @@
  * under the License.
  * #L%
  */
+package co.elastic.apm.agent.elasticsearch.rest;
 
-package co.elastic.apm.agent.elasticsearch;
-
+import co.elastic.apm.agent.elasticsearch.ElasticsearchInstrumentation;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
-import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.rest.RestChannel;
-import org.elasticsearch.rest.RestRequest;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.takesArgument;
 
-/**
- * Instruments {@link org.elasticsearch.rest.RestController#dispatchRequest(RestRequest, RestChannel, ThreadContext)}
- */
-public class RestControllerInstrumentation extends ElasticsearchInstrumentation {
-
+public class BaseRestHandlerInstrumentation extends ElasticsearchInstrumentation {
     @Override
     public ElementMatcher<? super TypeDescription> getTypeMatcher() {
-        // the only known implementation of org.elasticsearch.http.HttpServerTransport.Dispatcher
-        return named("org.elasticsearch.rest.RestController");
+        return named("org.elasticsearch.rest.BaseRestHandler");
     }
 
-    // dispatchRequest
-    // TODO dispatchBadRequest --> will need some wo
     @Override
     public ElementMatcher<? super MethodDescription> getMethodMatcher() {
-        return named("dispatchRequest")
+        return named("handleRequest")
             .and(takesArgument(0, named("org.elasticsearch.rest.RestRequest")))
-            .and(takesArgument(1, named("org.elasticsearch.rest.RestChannel")))
-            .and(takesArgument(2, named("org.elasticsearch.common.util.concurrent.ThreadContext")));
+            .and(takesArgument(1, named("org.elasticsearch.rest.RestChannel")));
     }
 
-    // DefaultRestChannel constructor provides the link between all of the following
-    // HttpChannel
-    // HttpRequest
-    // RestRequest
-
-    // HttpRequest.createResponse is called to create the HTTP response
-    // but it's called AFTER HttpRequest.release() has been called.
-    // --> keeping the transaction active during sendResponse could help
-
-    // then when DefaultRestChannel.sendResponse is called, we have the RestResponse provided as parameter
-    // the HttpChannel.sendResponse is also a good way to detect transaction end
+    @Override
+    public String getAdviceClassName() {
+        return "co.elastic.apm.agent.elasticsearch.rest.HandleRequestAdvice";
+    }
 }
