@@ -38,6 +38,7 @@ import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.tasks.Task;
+import org.elasticsearch.tasks.TaskId;
 
 import javax.annotation.Nullable;
 
@@ -215,8 +216,15 @@ public class ElasticsearchHelper {
         }
         AbstractSpan<?> created = null;
 
-        AbstractSpan<?> parentActive = tracer.getActive();
-        if (parentActive == null) {
+        AbstractSpan<?> taskParent = tracer.getActive();
+        if (taskParent == null) {
+            TaskId parentTaskId = task.getParentTaskId();
+            if (parentTaskId.isSet()) {
+                taskParent = globalState.activeTasks.get(parentTaskId.getId());
+            }
+        }
+
+        if (taskParent == null) {
             Transaction transaction = tracer.startRootTransaction(Task.class.getClassLoader());
             if (transaction != null) {
                 created = transaction.withType("task")
@@ -226,13 +234,13 @@ public class ElasticsearchHelper {
                     .appendToName(task.getAction());
             }
         } else {
-            created = parentActive.createSpan()
+            created = taskParent.createSpan()
                 .withType("task")
                 .withName(String.format("Task %s %s", task.getType(), task.getAction()))
                 .withSubtype(task.getType());
         }
 
-        globalState.activeTasks.put(task, created);
+        globalState.activeTasks.put(task.getId(), created);
 
         return created;
     }
@@ -242,7 +250,7 @@ public class ElasticsearchHelper {
             return;
         }
 
-        AbstractSpan<?> abstractSpan = globalState.activeTasks.remove(task);
+        AbstractSpan<?> abstractSpan = globalState.activeTasks.remove((Long) task.getId());
         if (abstractSpan == null) {
             return;
         }

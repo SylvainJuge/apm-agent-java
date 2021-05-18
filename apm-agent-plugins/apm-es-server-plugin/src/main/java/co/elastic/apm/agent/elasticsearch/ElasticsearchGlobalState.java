@@ -35,7 +35,6 @@ import org.elasticsearch.http.HttpChannel;
 import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestChannel;
-import org.elasticsearch.tasks.Task;
 
 /**
  * Provides storage for ES instrumentation global state
@@ -58,7 +57,7 @@ public class ElasticsearchGlobalState {
     public final WeakConcurrentMap<HttpResponse, Transaction> httpResponse2Transaction;
     public final WeakConcurrentMap<RestChannel, Transaction> restChannel2Transaction;
     public final WeakConcurrentMap<ActionListener<?>, Transaction> actionListener2Transaction;
-    public final WeakConcurrentMap<Task, AbstractSpan<?>> activeTasks;
+    public final WeakConcurrentMap<Long, AbstractSpan<?>> activeTasks;
 
     // package-private for testing
     ElasticsearchGlobalState() {
