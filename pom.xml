@@ -66,6 +66,7 @@
         <module>apm-indy-bootstrap-module</module>
         <module>apm-agent-premain</module>
         <module>apm-agent-attach-cli</module>
+        <module>apm-agent-opentelemetry</module>
     </modules>
 
     <properties>
@@ -119,6 +120,9 @@
         <version.animal-sniffer>1.17</version.animal-sniffer>
 
         <version.testcontainers>1.15.2</version.testcontainers>
+
+        <opentelemetry.api.version>1.2.0</opentelemetry.api.version>
+        <opentelemetry.instrumentation.version>1.2.0-alpha</opentelemetry.instrumentation.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

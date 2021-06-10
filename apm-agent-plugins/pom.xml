@@ -35,6 +35,7 @@
         <module>apm-log-shipper-plugin</module>
         <module>apm-es-restclient-plugin</module>
         <module>apm-okhttp-plugin</module>
+        <module>apm-opentelemetry-plugin</module>
         <module>apm-java-concurrent-plugin</module>
         <module>apm-urlconnection-plugin</module>
         <module>apm-jaxws-plugin</module>
@@ -51,7 +52,7 @@
         <module>apm-process-plugin</module>
         <module>apm-kafka-plugin</module>
         <module>apm-profiling-plugin</module>
-        <module>apm-grpc</module>
+<!--        <module>apm-grpc</module>-->
         <module>apm-grails-plugin</module>
         <module>apm-dubbo-plugin</module>
         <module>apm-bootdelegation-plugin</module>

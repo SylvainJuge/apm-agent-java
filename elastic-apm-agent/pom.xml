@@ -40,6 +40,11 @@
             <artifactId>apm-indy-bootstrap-module</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>apm-opentracing</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!--Agent plugins, sorted alphabetically -->
         <dependency>

@@ -41,13 +41,14 @@ import co.elastic.apm.agent.configuration.CoreConfiguration;
 import co.elastic.apm.agent.impl.ElasticApmTracer;
 import co.elastic.apm.agent.impl.ElasticApmTracerBuilder;
 import co.elastic.apm.agent.impl.GlobalTracer;
+import co.elastic.apm.agent.opentelemetry.OpenTelemetry;
 import co.elastic.apm.agent.premain.AgentMain;
+import co.elastic.apm.agent.premain.ThreadUtils;
 import co.elastic.apm.agent.sdk.ElasticApmInstrumentation;
 import co.elastic.apm.agent.sdk.weakmap.WeakMapSupplier;
 import co.elastic.apm.agent.util.DependencyInjectingServiceLoader;
 import co.elastic.apm.agent.util.ExecutorUtils;
 import co.elastic.apm.agent.util.ObjectUtils;
-import co.elastic.apm.agent.premain.ThreadUtils;
 import com.blogspot.mydailyjava.weaklockfree.WeakConcurrentMap;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -180,6 +181,8 @@ public class ElasticApmAgent {
         for (MethodMatcher traceMethod : tracer.getConfig(CoreConfiguration.class).getTraceMethods()) {
             instrumentations.add(new TraceMethodInstrumentation(tracer, traceMethod));
         }
+
+        instrumentations.addAll(OpenTelemetry.loadOTInstrumentations());
         return instrumentations;
     }
 
@@ -217,15 +220,19 @@ public class ElasticApmAgent {
     }
 
 
-
-    public static synchronized void initInstrumentation(final ElasticApmTracer tracer, Instrumentation instrumentation,
+    public static synchronized void initInstrumentation(ElasticApmTracer tracer,
+                                                        Instrumentation instrumentation,
                                                         Iterable<ElasticApmInstrumentation> instrumentations) {
+
         GlobalTracer.init(tracer);
         initInstrumentation(tracer, instrumentation, instrumentations, false);
     }
 
-    private static synchronized void initInstrumentation(final ElasticApmTracer tracer, Instrumentation instrumentation,
-                                                         Iterable<ElasticApmInstrumentation> instrumentations, boolean premain) {
+    private static synchronized void initInstrumentation(ElasticApmTracer tracer,
+                                                         Instrumentation instrumentation,
+                                                         Iterable<ElasticApmInstrumentation> instrumentations,
+                                                         boolean premain) {
+
         CoreConfiguration coreConfig = tracer.getConfig(CoreConfiguration.class);
         if (!coreConfig.isEnabled()) {
             return;
@@ -420,7 +427,9 @@ public class ElasticApmAgent {
         return logger;
     }
 
-    private static AgentBuilder.Transformer.ForAdvice getTransformer(final ElasticApmInstrumentation instrumentation, final Logger logger, final ElementMatcher<? super MethodDescription> methodMatcher) {
+    private static AgentBuilder.Transformer.ForAdvice getTransformer(final ElasticApmInstrumentation instrumentation,
+                                                                     final Logger logger,
+                                                                     final ElementMatcher<? super MethodDescription> methodMatcher) {
         Advice.WithCustomMapping withCustomMapping = Advice
             .withCustomMapping()
             .with(new AssignToPostProcessorFactory())
@@ -507,7 +516,7 @@ public class ElasticApmAgent {
         }
     }
 
-    private static void checkInline(MethodDescription.InDefinedShape advice, String adviceClassName, boolean isInline){
+    private static void checkInline(MethodDescription.InDefinedShape advice, String adviceClassName, boolean isInline) {
         if (isInline) {
             throw new IllegalStateException(String.format("Indy-dispatched advice %s#%s has to be declared with inline=false", adviceClassName, advice.getName()));
         } else if (!Modifier.isPublic(advice.getModifiers())) {
@@ -622,9 +631,13 @@ public class ElasticApmAgent {
         IndyPluginClassLoaderFactory.clear();
     }
 
-    private static AgentBuilder getAgentBuilder(final ByteBuddy byteBuddy, final CoreConfiguration coreConfiguration, final Logger logger,
-                                                final AgentBuilder.DescriptionStrategy descriptionStrategy, final boolean premain,
+    private static AgentBuilder getAgentBuilder(final ByteBuddy byteBuddy,
+                                                final CoreConfiguration coreConfiguration,
+                                                final Logger logger,
+                                                final AgentBuilder.DescriptionStrategy descriptionStrategy,
+                                                final boolean premain,
                                                 final boolean useTypePoolCache) {
+
         AgentBuilder.LocationStrategy locationStrategy = AgentBuilder.LocationStrategy.ForClassLoader.WEAK;
         if (agentJarFile != null) {
             try {
@@ -717,10 +730,12 @@ public class ElasticApmAgent {
      * that is specific to the provided class to instrument.
      * </p>
      *
-     * @param classToInstrument the class which should be instrumented
+     * @param classToInstrument      the class which should be instrumented
      * @param instrumentationClasses the instrumentation which should be applied to the class to instrument.
      */
-    public static void ensureInstrumented(Class<?> classToInstrument, Collection<Class<? extends ElasticApmInstrumentation>> instrumentationClasses) {
+    public static void ensureInstrumented(Class<?> classToInstrument,
+                                          Collection<Class<? extends ElasticApmInstrumentation>> instrumentationClasses) {
+
         Set<Collection<Class<? extends ElasticApmInstrumentation>>> appliedInstrumentations = getOrCreate(classToInstrument);
 
         if (!appliedInstrumentations.contains(instrumentationClasses)) {
@@ -846,6 +861,7 @@ public class ElasticApmAgent {
     /**
      * Returns the class loader that loaded the instrumentation class corresponding the given advice class.
      * We expect to be able to find the advice class file through this class loader.
+     *
      * @param adviceClass name of the advice class
      * @return class loader that can be used for the advice class file lookup
      */
