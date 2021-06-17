@@ -41,10 +41,10 @@ import co.elastic.apm.agent.configuration.CoreConfiguration;
 import co.elastic.apm.agent.impl.ElasticApmTracer;
 import co.elastic.apm.agent.impl.ElasticApmTracerBuilder;
 import co.elastic.apm.agent.impl.GlobalTracer;
-import co.elastic.apm.agent.opentelemetry.OpenTelemetry;
 import co.elastic.apm.agent.premain.AgentMain;
 import co.elastic.apm.agent.premain.ThreadUtils;
 import co.elastic.apm.agent.sdk.ElasticApmInstrumentation;
+import co.elastic.apm.agent.sdk.ElasticApmInstrumentationProvider;
 import co.elastic.apm.agent.sdk.weakmap.WeakMapSupplier;
 import co.elastic.apm.agent.util.DependencyInjectingServiceLoader;
 import co.elastic.apm.agent.util.ExecutorUtils;
@@ -182,12 +182,16 @@ public class ElasticApmAgent {
             instrumentations.add(new TraceMethodInstrumentation(tracer, traceMethod));
         }
 
-        instrumentations.addAll(OpenTelemetry.loadOTInstrumentations());
+        List<ElasticApmInstrumentationProvider> instrumentationProviders = DependencyInjectingServiceLoader.load(ElasticApmInstrumentationProvider.class, pluginClassLoaders, tracer);
+        for (ElasticApmInstrumentationProvider provider : instrumentationProviders) {
+            instrumentations.addAll(provider.loadInstrumentations());
+        }
+
         return instrumentations;
     }
 
     private static Collection<? extends ClassLoader> createExternalPluginClassLoaders(@Nullable String pluginsDirString) {
-        final Logger logger = LoggerFactory.getLogger(ElasticApmAgent.class);
+        Logger logger = getLogger();
         if (pluginsDirString == null) {
             logger.debug("No plugins dir");
             return Collections.emptyList();

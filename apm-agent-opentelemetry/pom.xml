@@ -23,19 +23,7 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>co.elastic.apm</groupId>
-            <artifactId>apm-agent-plugin-sdk</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!--
-        PoC hack
-        - gather all OT dependencies in a single module
-        - disable gRPC plugin as OT dependencies already pull gRPC, which conflicts with our plugin
-        - this could be merged into the plugin-sdk
-        -->
+        <!-- required dependencies for the instrumentation modules -->
 
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
@@ -53,6 +41,13 @@
             <groupId>io.opentelemetry.javaagent</groupId>
             <artifactId>opentelemetry-javaagent-bootstrap</artifactId>
             <version>${opentelemetry.instrumentation.version}</version>
+            <exclusions>
+                <exclusion>
+                    <!-- slf4j implementation must be provided by our agent -->
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -77,6 +72,21 @@
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service</artifactId>
             <version>1.0-rc7</version>
+        </dependency>
+
+        <!-- Required to modify SDK configuration -->
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+            <version>${opentelemetry.instrumentation.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>co.elastic.apm</groupId>
+            <artifactId>apm-agent-plugin-sdk</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>

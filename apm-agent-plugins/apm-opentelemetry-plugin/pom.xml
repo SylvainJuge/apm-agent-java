@@ -25,7 +25,7 @@
         <dependency>
             <groupId>io.opentelemetry.javaagent.instrumentation</groupId>
             <artifactId>opentelemetry-javaagent-apache-httpclient-4.0</artifactId>
-            <version>${opentelemetry.instrumentation.version}</version>
+            <version>${version.opentelemetry.instrumentation}</version>
         </dependency>
 
         <dependency>

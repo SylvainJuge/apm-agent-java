@@ -121,8 +121,8 @@
 
         <version.testcontainers>1.15.2</version.testcontainers>
 
-        <opentelemetry.api.version>1.2.0</opentelemetry.api.version>
-        <opentelemetry.instrumentation.version>1.2.0-alpha</opentelemetry.instrumentation.version>
+        <version.opentelemetry.api>1.2.0</version.opentelemetry.api>
+        <version.opentelemetry.instrumentation>1.2.0-alpha</version.opentelemetry.instrumentation>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
