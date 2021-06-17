@@ -47,8 +47,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -286,9 +284,8 @@ public class OTelSpan implements Span {
      */
     private boolean mapHttpUrlAttributes(AttributeKey<?> key, Object value, Url url) {
         if (key.equals(SemanticAttributes.HTTP_URL)) {
-            StringBuilder fullURl = url.getFull();
-            fullURl.setLength(0);
-            fullURl.append((String) value);
+            url.withFull((String) value);
+            url.parseAndFillFromFull();
         } else if (key.equals(SemanticAttributes.HTTP_TARGET)) {
             String httpTarget = (String) value;
             int indexOfQuery = httpTarget.indexOf('?');
