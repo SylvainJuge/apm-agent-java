@@ -244,7 +244,7 @@ public class CoreConfiguration extends ConfigurationOptionProvider {
         .configurationCategory(CORE_CATEGORY)
         .description("A list of instrumentations which should be disabled.\n" +
             "Valid options are ${allInstrumentationGroupNames}.\n" +
-            "If you want to try out experimental features, set the value to an empty string.\n" +
+            "For version `1.25.0` and later, use <<config-enable_experimental_instrumentations>> to enable experimental instrumentations.\n" +
             "\n" +
             "NOTE: Changing this value at runtime can slow down the application temporarily.")
         .dynamic(true)
@@ -256,9 +256,11 @@ public class CoreConfiguration extends ConfigurationOptionProvider {
         .configurationCategory(CORE_CATEGORY)
         .description("Whether to apply experimental instrumentations.\n" +
             "\n" +
-            "NOTE: Changing this value at runtime can slow down the application temporarily.")
+            "NOTE: Changing this value at runtime can slow down the application temporarily." +
+            "\n" +
+            "Setting to `true` will enable instrumentations in the `experimental` group.")
         .dynamic(true)
-        .tags("added[1.21.0]")
+        .tags("added[1.25.0]")
         .buildWithDefault(false);
 
     private final ConfigurationOption<List<WildcardMatcher>> unnestExceptions = ConfigurationOption
@@ -306,6 +308,9 @@ public class CoreConfiguration extends ConfigurationOptionProvider {
             "If the HTTP request or the message has a body and this setting is disabled, the body will be shown as [REDACTED].\n" +
             "\n" +
             "This option is case-insensitive.\n" +
+            "\n" +
+            "NOTE: Currently, the body length is limited to 10000 characters and it is not configurable. \n" +
+            "If the body size exceeds the limit, it will be truncated. \n" +
             "\n" +
             "NOTE: Currently, only UTF-8 encoded plain text HTTP content types are supported.\n" +
             "The option <<config-capture-body-content-types>> determines which content types are captured.\n" +

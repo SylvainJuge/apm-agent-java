@@ -168,15 +168,7 @@ public class OTelSpan implements Span {
             captureNetHostUrlAttributes(url, span.getContext());
             request.getSocket().withRemoteAddress(getClientRemoteAddress(span.getContext()));
             if (url.hasContent()) {
-                StringBuilder fullUrl = url.getFull();
-                if (fullUrl.length() > 0) {
-                    try {
-                        url.fillFromFullUrl(new URL(fullUrl.toString()));
-                    } catch (MalformedURLException ignore) {
-                    }
-                } else {
-                    url.fillFullUrl();
-                }
+                url.parseAndFillFromFull();
             }
         } else {
             t.withType("unknown");
@@ -210,7 +202,7 @@ public class OTelSpan implements Span {
         co.elastic.apm.agent.impl.context.SpanContext context = s.getContext();
 
         // http.*
-        if (mapHttpUrlAttributes(key, value, context.getHttp().getUrl())) {
+        if (mapHttpUrlAttributes(key, value, context.getHttp().getInternalUrl())) {
             // successfully mapped inside mapHttpUrlAttributes
         } else if (key.equals(SemanticAttributes.HTTP_STATUS_CODE)) {
             context.getHttp().withStatusCode(((Number) value).intValue());
@@ -246,7 +238,7 @@ public class OTelSpan implements Span {
         Destination destination = context.getDestination();
         if (context.getHttp().hasContent()) {
             s.withType("external").withSubtype("http");
-            Url url = context.getHttp().getUrl();
+            Url url = context.getHttp().getInternalUrl();
             if (context.getDestination().getAddress().length() > 0) {
                 url.withHostname(context.getDestination().getAddress().toString());
             }
@@ -255,14 +247,7 @@ public class OTelSpan implements Span {
             }
             // The full url is the only thing we report on spans.
             // Instrumentations may not set the full url but only it's components (see mapHttpUrlAttributes)
-            url.fillFullUrl();
-            if (url.getProtocol() == null || url.getHostname() == null) {
-                try {
-                    // We also need the different pieces of the url in order to determine the destination details
-                    url.fillFromFullUrl(new URL(url.getFull().toString()));
-                } catch (MalformedURLException ignore) {
-                }
-            }
+            url.updateFull();
             HttpClientHelper.setDestinationServiceDetails(s, url.getProtocol(), url.getHostname(), url.getPort());
         } else if (context.getDb().hasContent()) {
             s.withType("db").withSubtype(context.getDb().getType());
