@@ -40,6 +40,7 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.slf4j.Logger;
@@ -344,7 +345,10 @@ public class OTelSpan implements Span {
         }
     }
 
-    private static void setAttributeAsLabel(AbstractSpan<?> span, AttributeKey<?> key, Object value) {
+    private static void setAttributeAsLabel(AbstractSpan<?> span, AttributeKey<?> key, @Nullable Object value) {
+        if (value == null) {
+            return;
+        }
         if (value instanceof Boolean) {
             span.addLabel(key.getKey(), (Boolean) value);
         } else if (value instanceof Number) {

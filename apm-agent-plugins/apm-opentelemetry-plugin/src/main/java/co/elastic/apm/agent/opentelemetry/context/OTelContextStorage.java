@@ -24,48 +24,78 @@
  */
 package co.elastic.apm.agent.opentelemetry.context;
 
-import co.elastic.apm.agent.impl.ElasticApmTracer;
 import co.elastic.apm.agent.impl.transaction.AbstractSpan;
 import co.elastic.apm.agent.opentelemetry.sdk.OTelSpan;
+import co.elastic.apm.agent.sdk.state.GlobalThreadLocal;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.context.ContextKey;
 import io.opentelemetry.context.ContextStorage;
 import io.opentelemetry.context.Scope;
 
 import javax.annotation.Nullable;
 
 public class OTelContextStorage implements ContextStorage {
-    private final ElasticApmTracer elasticApmTracer;
 
-    public OTelContextStorage(ElasticApmTracer elasticApmTracer) {
-        this.elasticApmTracer = elasticApmTracer;
-    }
+    public static OTelContextStorage INSTANCE = new OTelContextStorage();
+
+    private static final GlobalThreadLocal<Context> ACTIVE_CONTEXT = GlobalThreadLocal.get(OTelContextStorage.class, "elastic-otel-context");
 
     @Override
-    public Scope attach(Context toAttach) {
-        Span span = Span.fromContext(toAttach);
-        if (span instanceof OTelSpan) {
-            AbstractSpan<?> internalSpan = ((OTelSpan) span).getInternalSpan();
-            elasticApmTracer.activate(internalSpan);
-            return new OTelScope(internalSpan);
-        } else {
+    public Scope attach(@Nullable Context toAttach) {
+        // fail-safe when trying to attach to null context
+        if (null == toAttach) {
             return Scope.noop();
         }
+
+        // context already current
+        Context contextBeforeAttach = ACTIVE_CONTEXT.get();
+        if (toAttach == contextBeforeAttach) {
+            return Scope.noop();
+        }
+
+        ACTIVE_CONTEXT.set(toAttach);
+
+        // we are able to retrieve current span as it as been already stored into context
+        Span span = Span.fromContextOrNull(toAttach);
+        AbstractSpan<?> internalSpan = null;
+        if (span instanceof OTelSpan) {
+            internalSpan = ((OTelSpan) span).getInternalSpan();
+        }
+
+        return new OTelScope(internalSpan, contextBeforeAttach);
     }
 
-    /**
-     * NOTE: the returned context is not the same as the one provided in {@link #attach(Context)}.
-     * The consequence of this is that it will not have the context keys of the original context.
-     * In other words, {@link Context#get(ContextKey)} will return {@code null} for any key besides the span key.
-     */
     @Nullable
     @Override
     public Context current() {
-        AbstractSpan<?> active = elasticApmTracer.getActive();
-        if (active == null) {
-            return null;
+        return ACTIVE_CONTEXT.get();
+    }
+
+    private static class OTelScope implements Scope {
+
+        @Nullable
+        private final AbstractSpan<?> span;
+
+        @Nullable
+        private final Context contextToRestore;
+
+        public OTelScope(@Nullable AbstractSpan<?> span, @Nullable Context contextToRestore) {
+            this.span = span;
+            this.contextToRestore = contextToRestore;
+            if (span != null) {
+                span.activate();
+            }
         }
-        return Context.root().with(new OTelSpan(active));
+
+        @Override
+        public void close() {
+            if (span != null) {
+                span.deactivate();
+            }
+
+            if (contextToRestore != null) {
+                ACTIVE_CONTEXT.set(contextToRestore);
+            }
+        }
     }
 }

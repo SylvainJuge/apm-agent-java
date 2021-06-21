@@ -55,12 +55,10 @@ public class ContextStorageInstrumentation extends AbstractOpenTelemetryInstrume
 
     public static class ContextStorageAdvice {
 
-        private static final OTelContextStorage CONTEXT_STORAGE = new OTelContextStorage(GlobalTracer.requireTracerImpl());
-
         @AssignTo.Return
         @Advice.OnMethodExit(suppress = Throwable.class, inline = false)
         public static ContextStorage onExit() {
-            return CONTEXT_STORAGE;
+            return OTelContextStorage.INSTANCE;
         }
     }
 }

@@ -53,7 +53,7 @@ public class GlobalThreadLocal<T> extends DetachedThreadLocal<T> {
         return get(adviceClass.getName() + "." + key, null);
     }
 
-    public static <T> GlobalThreadLocal<T> get(Class<?> adviceClass, String key, @Nullable T defaultValue) {
+    public static <T> GlobalThreadLocal<T> get(Class<?> adviceClass, String key, @Nullable T defaultValue) { // TODO : rename arg as it may not be advice class name ?
         return get(adviceClass.getName() + "." + key, defaultValue);
     }
 

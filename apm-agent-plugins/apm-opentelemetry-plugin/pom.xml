@@ -39,7 +39,11 @@
             <scope>test</scope>
         </dependency>
 
-
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>apm-httpclient-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 <!--
@@ -54,11 +58,6 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
             <version>1.0.0-alpha</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>apm-httpclient-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
 -->
 

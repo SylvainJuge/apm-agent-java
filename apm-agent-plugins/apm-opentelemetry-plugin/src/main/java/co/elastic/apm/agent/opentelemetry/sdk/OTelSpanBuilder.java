@@ -59,10 +59,13 @@ class OTelSpanBuilder implements SpanBuilder {
     @Nullable
     private Context remoteContext;
 
+    private SpanKind spanKind;
+
     public OTelSpanBuilder(String spanName, ElasticApmTracer elasticApmTracer) {
         this.spanName = spanName;
         this.elasticApmTracer = elasticApmTracer;
         this.parent = elasticApmTracer.getActive();
+        this.spanKind = SpanKind.INTERNAL;
     }
 
     @Override
@@ -127,6 +130,7 @@ class OTelSpanBuilder implements SpanBuilder {
 
     @Override
     public SpanBuilder setSpanKind(SpanKind spanKind) {
+        this.spanKind = spanKind; // TODO : find where this span kind is stored and used in the Otel Agent
         return this;
     }
 
