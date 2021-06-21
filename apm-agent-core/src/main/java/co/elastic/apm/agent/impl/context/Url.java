@@ -98,7 +98,7 @@ public class Url implements Recyclable {
      *
      * @return url
      */
-    private void updateFull() {
+    public void updateFull() {
         // inspired by org.apache.catalina.connector.Request.getRequestURL
 
         int portValue = normalizePort(port, protocol);

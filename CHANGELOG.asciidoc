@@ -41,6 +41,7 @@ setting `disable_instrumentations=jdbc` would disable jdbc and also enable exper
 ** Previously, by default `disable_instrumentations` contained `experimental`
 ** Now by default `disable_instrumentations` is empty and `enable_experimental_instrumentations=false`
 ** Set `disable_instrumentations=true` to enable experimental instrumentations
+* OpenTelemetry tracer API bridge (experimental): <<opentelementry-bridge>>
 
 [float]
 ===== Bug fixes
