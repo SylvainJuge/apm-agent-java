@@ -126,7 +126,7 @@ public class Url implements Recyclable {
      * @return this
      */
     public Url withFull(CharSequence value) {
-        if (!urlNeedsSanitize(value)) {
+        if (!urlNeedsSanitization(value)) {
             full.setLength(0);
             full.append(value);
         } else {
@@ -145,7 +145,7 @@ public class Url implements Recyclable {
         return this;
     }
 
-    private static boolean urlNeedsSanitize(CharSequence sequence) {
+    private static boolean urlNeedsSanitization(CharSequence sequence) {
         for (int i = 0; i < sequence.length(); i++) {
             if (sequence.charAt(i) == '@') {
                 return true;
