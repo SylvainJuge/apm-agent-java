@@ -39,27 +39,29 @@
 
         <dependency>
             <groupId>io.opentelemetry.javaagent</groupId>
-            <artifactId>opentelemetry-javaagent-bootstrap</artifactId>
-            <version>${opentelemetry.instrumentation.version}</version>
-            <exclusions>
-                <exclusion>
-                    <!-- slf4j implementation must be provided by our agent -->
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>io.opentelemetry.javaagent</groupId>
             <artifactId>opentelemetry-javaagent-extension-api</artifactId>
             <version>${opentelemetry.instrumentation.version}</version>
-        </dependency>
 
-        <dependency>
-            <groupId>io.opentelemetry.javaagent</groupId>
-            <artifactId>opentelemetry-javaagent-tooling</artifactId>
-            <version>${opentelemetry.instrumentation.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                </exclusion>
+
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-sdk</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-sdk-metrics</artifactId>
+                </exclusion>
+
+                <exclusion>
+                    <groupId>io.opentelemetry.javaagent</groupId>
+                    <artifactId>opentelemetry-javaagent-bootstrap</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -72,14 +74,6 @@
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service</artifactId>
             <version>1.0-rc7</version>
-        </dependency>
-
-        <!-- Required to modify SDK configuration -->
-
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-            <version>${opentelemetry.instrumentation.version}</version>
         </dependency>
 
         <dependency>

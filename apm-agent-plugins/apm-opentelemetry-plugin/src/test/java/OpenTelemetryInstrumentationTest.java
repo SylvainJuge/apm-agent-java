@@ -56,7 +56,7 @@ public class OpenTelemetryInstrumentationTest  extends AbstractInstrumentationTe
     }
 
     @Test
-    void simpleGet() throws IOException, InterruptedException {
+    void simpleGet() throws IOException {
         disableRecyclingValidation();
 
         Transaction transaction = startTestRootTransaction("opentelemetry");

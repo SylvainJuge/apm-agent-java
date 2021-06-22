@@ -44,22 +44,10 @@
             <artifactId>apm-httpclient-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- otel dependencies are provided through the 'apm-agent-opentelemetry' module -->
+
     </dependencies>
-
-<!--
-
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api</artifactId>
-            <version>1.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-semconv</artifactId>
-            <version>1.0.0-alpha</version>
-        </dependency>
--->
 
 
     <build>
