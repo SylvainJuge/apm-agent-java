@@ -11,9 +11,9 @@
  * the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,6 +36,7 @@ import net.bytebuddy.matcher.ElementMatcher;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +44,6 @@ public class OpenTelemetryInstrumentationProvider implements ElasticApmInstrumen
 
     @Override
     public List<ElasticApmInstrumentation> loadInstrumentations() {
-        // TODO : use ordered variant (not released yet)
         // TODO : use isolated classloader for OT classes
         ClassLoader classLoader = OpenTelemetryInstrumentationProvider.class.getClassLoader();
 
@@ -60,8 +60,8 @@ public class OpenTelemetryInstrumentationProvider implements ElasticApmInstrumen
         return instrumentations;
     }
 
-    private static List<ElasticApmInstrumentation> toElasticInstrumentation(InstrumentationModule module) {
-        List<ElasticApmInstrumentation> list = new ArrayList<>();
+    private static List<OtelInstrumentation> toElasticInstrumentation(InstrumentationModule module) {
+        List<OtelInstrumentation> list = new ArrayList<>();
         for (TypeInstrumentation instrumentation : module.typeInstrumentations()) {
             Map<? extends ElementMatcher<? super MethodDescription>, String> transformers = instrumentation.transformers();
             for (Map.Entry<? extends ElementMatcher<? super MethodDescription>, String> transformer : transformers.entrySet()) {
@@ -70,9 +70,17 @@ public class OpenTelemetryInstrumentationProvider implements ElasticApmInstrumen
                     module.classLoaderMatcher(),
                     instrumentation.typeMatcher(),
                     transformer.getKey(),
-                    transformer.getValue()));
+                    transformer.getValue(),
+                    module.order()));
             }
         }
+
+        Collections.sort(list, new Comparator<OtelInstrumentation>() {
+            @Override
+            public int compare(OtelInstrumentation e1, OtelInstrumentation e2) {
+                return e1.order - e2.order;
+            }
+        });
 
         return list;
     }
@@ -84,18 +92,21 @@ public class OpenTelemetryInstrumentationProvider implements ElasticApmInstrumen
         private final ElementMatcher<? super TypeDescription> typeMatcher;
         private final ElementMatcher<? super MethodDescription> methodMatcher;
         private final String adviceClassName;
+        private final int order;
 
         public OtelInstrumentation(String name,
                                    ElementMatcher.Junction<ClassLoader> classLoaderMatcher,
                                    ElementMatcher<? super TypeDescription> typeMatcher,
                                    ElementMatcher<? super MethodDescription> methodMatcher,
-                                   String adviceClassName) {
+                                   String adviceClassName,
+                                   int order) {
 
             this.name = name;
             this.classLoaderMatcher = classLoaderMatcher;
             this.typeMatcher = typeMatcher;
             this.methodMatcher = methodMatcher;
             this.adviceClassName = adviceClassName;
+            this.order = order;
         }
 
         @Override
