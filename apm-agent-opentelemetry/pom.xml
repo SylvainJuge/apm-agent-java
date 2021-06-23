@@ -16,9 +16,6 @@
         <apm-agent-parent.base.dir>${project.basedir}/..</apm-agent-parent.base.dir>
 
         <animal.sniffer.skip>true</animal.sniffer.skip>
-
-        <opentelemetry.api.version>1.2.0</opentelemetry.api.version>
-        <opentelemetry.instrumentation.version>1.2.0-alpha</opentelemetry.instrumentation.version>
     </properties>
 
     <dependencies>
@@ -28,19 +25,26 @@
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-instrumentation-api</artifactId>
-            <version>${opentelemetry.instrumentation.version}</version>
+            <version>${version.opentelemetry.instrumentation}</version>
         </dependency>
+        <!-- not strictly required for now, but used by some instrumentation modules -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-api-caching</artifactId>
+            <version>${version.opentelemetry.instrumentation}</version>
+        </dependency>
+
 
         <dependency>
             <groupId>io.opentelemetry.javaagent</groupId>
             <artifactId>opentelemetry-javaagent-api</artifactId>
-            <version>${opentelemetry.instrumentation.version}</version>
+            <version>${version.opentelemetry.instrumentation}</version>
         </dependency>
 
         <dependency>
             <groupId>io.opentelemetry.javaagent</groupId>
             <artifactId>opentelemetry-javaagent-extension-api</artifactId>
-            <version>${opentelemetry.instrumentation.version}</version>
+            <version>${version.opentelemetry.instrumentation}</version>
 
             <exclusions>
                 <exclusion>
@@ -67,7 +71,7 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
-            <version>${opentelemetry.api.version}</version>
+            <version>${version.opentelemetry.api}</version>
         </dependency>
 
         <dependency>

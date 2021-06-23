@@ -42,6 +42,8 @@ public class SandboxTest {
     void loadInstrumentationModule() {
         // ensure that we have all the dependencies for the Instrumentation Module
 
+        // TODO SafeServiceLoader is not available in API as of version 1.3.0-alpha, using our own might be relevant
+        // but we also have to use sorted variant (InstrumentationModule implements Ordered as of 1.3.0).
         List<InstrumentationModule> list = SafeServiceLoader.load(InstrumentationModule.class, this.getClass().getClassLoader());
         assertThat(list).isNotEmpty();
         assertThat(list).hasSize(1);

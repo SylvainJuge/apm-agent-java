@@ -51,7 +51,7 @@ public class OpenTelemetryVersionIT {
         return Arrays.asList(new Object[][]{
             {"0.17.0"},
             {"0.17.1"},
-            {"1.0.0"},
+            {"1.0.0"}, // TODO : expand this to 1.{1,2,3}.0 versions
         });
     }
 
