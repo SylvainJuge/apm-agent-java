@@ -42,7 +42,7 @@ public class ServletContainerTest extends AbstractInstrumentationTest {
         app = WebFluxApplication.run(-1, "tomcat", true);
 
         // client type and server endpoint do not matter here
-        client = app.getClient(true);
+        client = app.clientBuilder().build();
     }
 
     @AfterAll

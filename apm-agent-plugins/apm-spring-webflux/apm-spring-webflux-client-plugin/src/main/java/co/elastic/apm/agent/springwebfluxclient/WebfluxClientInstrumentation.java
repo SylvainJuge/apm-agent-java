@@ -16,26 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package co.elastic.apm.agent.springwebflux.testapp;
+package co.elastic.apm.agent.springwebfluxclient;
 
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import co.elastic.apm.agent.bci.TracerAwareInstrumentation;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class AnnotatedEndpointTest extends ApplicationTest {
+import java.util.Arrays;
+import java.util.Collection;
 
-    @LocalServerPort
-    private int serverPort;
+public abstract class WebfluxClientInstrumentation extends TracerAwareInstrumentation {
 
     @Override
-    protected GreetingWebClient createClient() {
-        return GreetingWebClient.builder("localhost", serverPort)
-            .useFunctionalEndpoint(false)
-            .logging(true)
-            .build();
+    public final Collection<String> getInstrumentationGroupNames() {
+        return Arrays.asList("spring-webflux-client", "experimental");
     }
-
 }

@@ -22,6 +22,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ClientHttpConnector;
+import org.springframework.http.client.reactive.JettyClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.util.MultiValueMap;
@@ -41,6 +43,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class GreetingWebClient {
@@ -58,24 +61,71 @@ public class GreetingWebClient {
     private final String wsBaseUri;
     private final boolean logEnabled;
 
-
     // this client also applies a few basic checks to ensure that application behaves
     // as expected within unit tests and in packaged application without duplicating
     // all the testing logic.
 
-    public GreetingWebClient(String host, int port, boolean useFunctionalEndpoint, boolean logEnabled) {
+    public static Builder builder(String host, int port) {
+        return new Builder(host, port);
+    }
+
+    public static class Builder {
+        private final String host;
+        private final int port;
+        private boolean useFunctionalEndpoint = false;
+        private boolean logEnabled = true;
+        private HttpConnector httpConnector = HttpConnector.ReactorNetty;
+
+        private Builder(String host, int port) {
+            this.host = host;
+            this.port = port;
+        }
+
+        public Builder logging(boolean enabled) {
+            this.logEnabled = enabled;
+            return this;
+        }
+
+        public Builder useFunctionalEndpoint(boolean useFunctionalEndpoint) {
+            this.useFunctionalEndpoint = useFunctionalEndpoint;
+            return this;
+        }
+
+        public Builder httpConnector(HttpConnector connector) {
+            this.httpConnector = connector;
+            return this;
+        }
+
+        public GreetingWebClient build() {
+            return new GreetingWebClient(host, port, useFunctionalEndpoint, logEnabled, httpConnector.supplier.get());
+        }
+    }
+
+    public enum HttpConnector {
+        ReactorNetty(ReactorClientHttpConnector::new),
+        Jetty(JettyClientHttpConnector::new);
+
+        private final Supplier<ClientHttpConnector> supplier;
+
+        HttpConnector(Supplier<ClientHttpConnector> supplier) {
+            this.supplier = supplier;
+        }
+    }
+
+    private GreetingWebClient(String host, int port, boolean useFunctionalEndpoint, boolean logEnabled, ClientHttpConnector httpConnector) {
         this.pathPrefix = useFunctionalEndpoint ? "/functional" : "/annotated";
         String baseUri = String.format("http://%s:%d%s", host, port, pathPrefix);
         this.wsBaseUri = String.format("ws://%s:%d", host, port);
         this.port = port;
         this.client = WebClient.builder()
             .baseUrl(baseUri)
-            .clientConnector(new ReactorClientHttpConnector()) // allows to use either netty/reactor or jetty client
+            .clientConnector(httpConnector)
             .build();
         this.useFunctionalEndpoint = useFunctionalEndpoint;
         this.headers = new HttpHeaders();
         this.cookies = new HttpHeaders();
         this.clientScheduler = Schedulers.newElastic("webflux-client");
+        // there are at least 4 other implementations, if (and when) adding proper WS support, we have to test them all
         this.wsClient = new ReactorNettyWebSocketClient();
         this.logEnabled = logEnabled;
     }
@@ -233,7 +283,7 @@ public class GreetingWebClient {
         headers.add(name, value);
     }
 
-    public void setCookie(String name, String value){
+    public void setCookie(String name, String value) {
         cookies.add(name, value);
     }
 }

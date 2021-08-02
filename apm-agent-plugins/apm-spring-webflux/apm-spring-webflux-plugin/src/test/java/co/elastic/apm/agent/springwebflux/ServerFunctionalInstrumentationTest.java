@@ -27,7 +27,9 @@ public class ServerFunctionalInstrumentationTest extends AbstractServerInstrumen
 
     @Override
     protected GreetingWebClient getClient() {
-        return app.getClient(true);
+        return app.clientBuilder()
+            .useFunctionalEndpoint(true)
+            .build();
     }
 
     @ParameterizedTest

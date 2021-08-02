@@ -51,7 +51,7 @@ public class WebSocketServerInstrumentationTest extends AbstractInstrumentationT
     @BeforeEach
     void beforeEach() {
         assertThat(reporter.getTransactions()).isEmpty();
-        client = app.getClient(false); // functional/annotated does not matter for websockets
+        client = app.clientBuilder().build();
     }
 
     @AfterEach

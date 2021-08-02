@@ -24,6 +24,8 @@ public class ServerAnnotatedInstrumentationTest extends AbstractServerInstrument
 
     @Override
     protected GreetingWebClient getClient() {
-        return app.getClient(false);
+        return app.clientBuilder()
+            .useFunctionalEndpoint(false)
+            .build();
     }
 }

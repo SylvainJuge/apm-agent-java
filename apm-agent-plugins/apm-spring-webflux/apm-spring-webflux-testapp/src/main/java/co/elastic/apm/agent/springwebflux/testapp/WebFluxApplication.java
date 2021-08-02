@@ -90,7 +90,10 @@ public class WebFluxApplication {
             }
         } else if (isClient) {
             count = Math.max(count, 1);
-            doSampleRequests(useFunc -> new GreetingWebClient("localhost", port, useFunc, logEnabled), count);
+            doSampleRequests(useFunc -> GreetingWebClient.builder("localhost", port)
+                .useFunctionalEndpoint(useFunc)
+                .logging(logEnabled)
+                .build(), count);
         } else {
             // leave server running
         }
@@ -148,8 +151,16 @@ public class WebFluxApplication {
             this.logEnabled = logEnabled;
         }
 
+        @Deprecated
         public GreetingWebClient getClient(boolean useFunctional) {
-            return new GreetingWebClient("localhost", port, useFunctional, logEnabled);
+            return clientBuilder()
+                .useFunctionalEndpoint(useFunctional)
+                .build();
+        }
+
+        public GreetingWebClient.Builder clientBuilder() {
+            return GreetingWebClient.builder("localhost", port)
+                .logging(logEnabled);
         }
 
         @Override
