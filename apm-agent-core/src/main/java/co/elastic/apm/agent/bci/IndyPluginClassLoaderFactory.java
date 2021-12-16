@@ -98,6 +98,12 @@ public class IndyPluginClassLoaderFactory {
         return injectedClasses;
     }
 
+    public synchronized static void init() {
+        // initialize indy plugin classloader early to prevent locking System properties later when ByteArrayClassLoader
+        // is trying to read system properties
+        IndyPluginClassLoader.class.getClassLoader();
+    }
+
     public synchronized static void clear() {
         alreadyInjected.clear();
     }

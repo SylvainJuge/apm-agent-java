@@ -155,6 +155,9 @@ public class ElasticApmAgent {
         if (!tracer.getConfig(CoreConfiguration.class).isEnabled()) {
             return;
         }
+
+        IndyPluginClassLoaderFactory.init();
+
         GlobalTracer.init(tracer);
         // ensure classes can be instrumented before LifecycleListeners use them by starting the tracer after initializing instrumentation
         initInstrumentation(tracer, instrumentation, loadInstrumentations(tracer), premain);
