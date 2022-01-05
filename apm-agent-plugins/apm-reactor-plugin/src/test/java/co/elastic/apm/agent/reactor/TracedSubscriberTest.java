@@ -33,6 +33,7 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 import javax.annotation.Nullable;
+import java.time.Duration;
 import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,7 +68,7 @@ class TracedSubscriberTest extends AbstractInstrumentationTest {
         checkHookRegistration(false, "unregister twice is no-op");
     }
 
-    private static void checkHookRegistration(boolean registered, String msg){
+    private static void checkHookRegistration(boolean registered, String msg) {
         assertThat(TracedSubscriber.isHookRegistered())
             .describedAs(msg)
             .isEqualTo(registered);
@@ -172,6 +173,69 @@ class TracedSubscriberTest extends AbstractInstrumentationTest {
             .expectNextMatches(inOtherThread(transaction, 2))
             .expectNextMatches(inOtherThread(transaction, 4))
             .expectNextMatches(inOtherThread(transaction, 6))
+            .verifyComplete();
+
+    }
+
+    @Test
+    void contextPropagation_flatMap() {
+
+        transaction = startTestRootTransaction("root");
+
+        Flux<Integer> flux = Flux.just(1, 2, 3)
+            .subscribeOn(SUBSCRIBE_SCHEDULER)
+            .publishOn(PUBLISH_SCHEDULER)
+            .log();
+
+        Flux<TestObservation> flatMappedFlux = flux
+            .flatMap(i -> {
+                assertThat(tracer.getActive())
+                    .describedAs("transaction should be active in flatMap operator")
+                    .isSameAs(transaction);
+
+                return Flux.range(1, i)
+                    // checking terminal context propagation with test observation
+                    .map(v -> TestObservation.capture(i));
+            });
+
+        StepVerifier.create(flatMappedFlux)
+            .expectNextMatches(inOtherThread(transaction,1))
+            .expectNextMatches(inOtherThread(transaction,2))
+            .expectNextMatches(inOtherThread(transaction,2))
+            .expectNextMatches(inOtherThread(transaction,3))
+            .expectNextMatches(inOtherThread(transaction,3))
+            .expectNextMatches(inOtherThread(transaction,3))
+            .verifyComplete();
+
+    }
+
+    @Test
+    void contextPropagation_sandbox2() {
+
+        transaction = startTestRootTransaction("root");
+
+        StepVerifier.withVirtualTime(()-> {
+                Flux<TestObservation> flux = Flux.just(1, 2, 3)
+                    // 1st item delayed by 1 second, 2cnd item by 2 seconds, 3rd item by 3s.
+                    .delayUntil(i -> Flux.just(i).delayElements(Duration.ofSeconds(i)))
+                    // active context capture
+                    .map(TestObservation::capture);
+
+                return flux.timeout(
+                    Duration.ofMillis(2900),
+                    Flux.just(42).map(TestObservation::capture));
+                }
+            )
+            // subscription + no event for 1 second
+            .expectSubscription()
+            .expectNoEvent(Duration.ofSeconds(1))
+            // then expect event 1 and 2
+            .expectNextMatches(inMainThread(transaction,1))
+            .thenAwait(Duration.ofSeconds(2))
+            .expectNextMatches(inMainThread(transaction,2))
+            // 3rd event comes from fallback as there is a timeout
+            .thenAwait(Duration.ofSeconds(3))
+            .expectNextMatches(inMainThread(transaction,42))
             .verifyComplete();
 
     }
